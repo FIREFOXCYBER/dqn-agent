@@ -3,12 +3,11 @@ with DQNAgent.
 """
 import tensorflow as tf
 import numpy as np
-
 class DQNModel(object):
   def __init__(
       self, env, learning_rate=2.5e-4, momentum=0.95, gamma=0.99, tau=0.01,
       huber_loss=True, soft_updates=True, steps_to_hard_update=10000,
-      weights_to_load=None, train_dir='train', collect_summaries=True):
+      weights_to_load=None, train_dir='dqnrgb0', collect_summaries=True):
     """
     arguments:
     env -- OpenAI gym environment
@@ -74,7 +73,7 @@ class DQNModel(object):
           ) - masked_online_qs
 
     if self.huber_loss:
-      self.delta = tf.select(tf.abs(self.delta) < 1.0, 0.5 *
+      self.delta = tf.where(tf.abs(self.delta) < 1.0, 0.5 *
           tf.square(self.delta), tf.abs(self.delta) - 0.5)
 
     with tf.variable_scope('main_loss'):
@@ -95,14 +94,14 @@ class DQNModel(object):
         self.target_updates = self.get_hard_updates()
 
 
-    self.saver = tf.train.Saver(tf.all_variables())
+    self.saver = tf.train.Saver(tf.all_variables(), max_to_keep = 0)
 
-    loss_summary = tf.scalar_summary('loss', self.loss)
-    q_summary = tf.scalar_summary('max_q', tf.reduce_max(online_qs))
-    self.summary_op = tf.merge_all_summaries()
+    loss_summary = tf.summary.scalar('loss', self.loss)
+    q_summary = tf.summary.scalar('max_q', tf.reduce_max(online_qs))
+    self.summary_op = tf.summary.merge_all()
 
     self.sess = tf.Session()
-    self.summary_writer = tf.train.SummaryWriter(train_dir, self.sess.graph)
+    self.summary_writer = tf.summary.FileWriter(train_dir, self.sess.graph)
     if weights_to_load is None:
       init = tf.initialize_all_variables()
       self.sess.run(init)
@@ -177,9 +176,9 @@ class DQNModel(object):
         self.terminals_mask:terminals_mask})
       self.summary_writer.add_summary(summary_str, self.total_steps)
 
-    if self.total_steps % 10000 == 0:
+    if self.total_steps % 3000 == 0:
       self.saver.save(self.sess,
-                      'train/model.ckpt',
+                      'dqn0/model.ckpt',
                       global_step=self.total_steps)
 
   def get_q_value(self, observation):

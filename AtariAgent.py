@@ -1,10 +1,11 @@
 import gym
+import jde_gym_gazebo
 import argparse
 
 from ConvModel import ConvModel
 from DQNAgent import DQNAgent
 
-ENV_NAME = 'Breakout-v0'
+ENV_NAME = 'jde-gazebo-kobuki-rgb-v0'
 def main():
   parser = argparse.ArgumentParser('Train or Evaluate a DQN Agent for OpenAI '
       'Gym Atari Environments')
@@ -23,9 +24,9 @@ def main():
   model = ConvModel(env, learning_rate=2.5e-4, momentum=0.95, gamma=0.99,
       tau=0.01, soft_updates=False, weights_to_load=weights_to_load)
   agent = DQNAgent(env, model, linear_epsilon_decay=True,
-      epsilon_decay_steps=1.e6, epsilon=1.0, min_epsilon=0.1,
-      exp_buffer_size=1000000, batch_size=32, render=render,
-      update_freq=4, random_starts=30)
+      epsilon_decay_steps=1.e6, epsilon=1.0, min_epsilon=0.06,
+      exp_buffer_size=1000000, batch_size=128, render=render,
+      update_freq=1, random_starts=30,max_steps=10000)
 
   if evaluate:
     agent.evaluate()

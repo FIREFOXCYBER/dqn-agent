@@ -3,6 +3,8 @@ import numpy as np
 import random
 from collections import deque
 from ExperienceMemory import ExperienceMemory
+import time
+import cv2
 
 class DQNAgent(object):
   def __init__(self, env, model, max_episodes=200000, max_steps=1000000,
@@ -58,6 +60,8 @@ class DQNAgent(object):
     self.random_starts = random_starts
 
     self.render = render
+    self.start_time = time.time()
+    self.prev_time = time.time()
 
   def train(self):
     """ The training loop of the DQNAgent. Steps the environment,
@@ -75,6 +79,8 @@ class DQNAgent(object):
         # select action according to the recent_observations
         action = self.select_action()
         second_observation, reward, done, _ = self.env.step(action)
+        if step == 9999:
+          reward += 300
 
         # observations are saved with the same index as the
         # action, reward and done following them
@@ -99,7 +105,8 @@ class DQNAgent(object):
             else:
               self.eps *= self.exponential_epsilon_decay
         if done:
-          self.report(total_steps, step, rewards, ep)
+          self.report(total_steps, step, rewards, ep, time.time(), float(step)/float(time.time()-self.prev_time))
+          self.prev_time = time.time()
           break
 
   def evaluate(self):
@@ -135,16 +142,17 @@ class DQNAgent(object):
         if total_steps > self.warmup_steps:
           self.warmup = False
         if done:
-          self.report(total_steps, step, rewards, ep)
+          self.report(total_steps, step, rewards, ep, time.time(), float(step)/float(time.time()-self.prev_time))
+          self.prev_time = time.time()
           break
 
   def new_random_game(self):
     ob = self.env.reset()
-    no_rnd = np.random.randint(0, self.random_starts)
-    for i in range(no_rnd):
-      ob, _, _, _ = self.env.step(0)
+#    no_rnd = np.random.randint(0, self.random_starts)
+#    for i in range(no_rnd):
+#      ob, _, _, _ = self.env.step(0)
 
-    return ob
+    return ob[0]
 
   def select_action(self):
     """Selects action for given observation."""
@@ -162,6 +170,8 @@ class DQNAgent(object):
 
   def append_to_recent_observations(self, observation):
     observation = self.model.reshape_observation(observation)
+    #cv2.imshow("obz", observation)
+    #cv2.waitKey(1)
     self.recent_observations.append(observation)
 
   def save_experience(self, action, reward, done):
@@ -173,8 +183,10 @@ class DQNAgent(object):
         self.batch_size, self.window_size)
     self.model.train_net(mb_ob0, mb_ac, mb_re, mb_ob1, mb_term)
 
-  def report(self, total_steps, steps, rewards, episode):
+  def report(self, total_steps, steps, rewards, episode, time, fps):
     self.reward_log.append(rewards)
+    m, s = divmod(int(time - self.start_time), 60)
+    h, m = divmod(m, 60)
     print('Episode: {} Total steps: {}, steps: {}, reward: {} mean-100: '
-          '{} epsilon: {}'.format(episode, total_steps, steps, rewards,
-          np.mean(self.reward_log), self.eps))
+          '{} epsilon: {}, fps: {}, time: {}:{}:{}'.format(episode, total_steps, steps, rewards,
+          np.mean(self.reward_log), self.eps, fps, h, m, s))
