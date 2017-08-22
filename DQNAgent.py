@@ -172,7 +172,9 @@ class DQNAgent(object):
     observation = self.model.reshape_observation(observation)
     #cv2.imshow("obz", observation)
     #cv2.waitKey(1)
-    self.recent_observations.append(observation)
+    b, g, r = cv2.split(observation)
+    observation_rev = np.concatenate( (b,g,r), axis=0)
+    self.recent_observations.append(observation_rev)
 
   def save_experience(self, action, reward, done):
     self.experiences.save_experience(self.recent_observations[-1],

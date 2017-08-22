@@ -47,7 +47,7 @@ class ConvModel(DQNModel):
     if grayscale:
       self.input_shape[0] = window_size
     else:
-      raise NotImplementedError()
+      self.input_shape[0] = window_size * 3
 
     self.window_size = window_size
     super(ConvModel, self).__init__(env, **kwargs)
@@ -110,6 +110,7 @@ class ConvModel(DQNModel):
           'b_linear': b_linear,
         },
         'outputs':outputs,
+        'x':x_input,
     }
 
     return net_dict

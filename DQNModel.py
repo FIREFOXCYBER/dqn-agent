@@ -3,11 +3,12 @@ with DQNAgent.
 """
 import tensorflow as tf
 import numpy as np
+import cv2
 class DQNModel(object):
   def __init__(
       self, env, learning_rate=2.5e-4, momentum=0.95, gamma=0.99, tau=0.01,
       huber_loss=True, soft_updates=True, steps_to_hard_update=10000,
-      weights_to_load=None, train_dir='dqnrgb0', collect_summaries=True):
+      weights_to_load=None, train_dir='dqnrgb2', collect_summaries=True):
     """
     arguments:
     env -- OpenAI gym environment
@@ -98,9 +99,20 @@ class DQNModel(object):
 
     loss_summary = tf.summary.scalar('loss', self.loss)
     q_summary = tf.summary.scalar('max_q', tf.reduce_max(online_qs))
+    temp_img = tf.split(self.online_model['x'],4,axis=3)
+    img = []
+    img.append( tf.concat(temp_img[0:2] ,2))
+    img.append( tf.concat(temp_img[2:4] ,2))
+    online_input_summary = tf.summary.image("online", tf.concat( img[:],1))
+    temp_img = tf.split(self.target_model['x'],4,axis=3)
+    img = []
+    img.append( tf.concat(temp_img[0:2] ,2))
+    img.append( tf.concat(temp_img[2:4] ,2))
+    target_input_summary = tf.summary.image("target", tf.concat( img[:],1))
     self.summary_op = tf.summary.merge_all()
 
-    self.sess = tf.Session()
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.666)
+    self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     self.summary_writer = tf.summary.FileWriter(train_dir, self.sess.graph)
     if weights_to_load is None:
       init = tf.initialize_all_variables()
@@ -142,13 +154,15 @@ class DQNModel(object):
     ob0s = self.reshape_input(ob0)
     ob1s = self.reshape_input(ob1)
 
+
     acs = np.reshape(actions, (-1, 1))
     res = np.reshape(rewards, (-1, 1))
     terms = np.reshape(terminals, (-1, 1))
 
     # Clip rewards to -1,0,1
-    out_res = np.zeros_like(res)
-    out_res[np.nonzero(res)] = 1. * np.sign(res[np.nonzero(res)])
+    #out_res = np.zeros_like(res)
+    #out_res[np.nonzero(res)] = 1. * np.sign(res[np.nonzero(res)])
+    out_res = res
 
     terminals_mask = np.invert(terms) * 1
 
@@ -178,7 +192,7 @@ class DQNModel(object):
 
     if self.total_steps % 3000 == 0:
       self.saver.save(self.sess,
-                      'dqn0/model.ckpt',
+                      'dqn2/model.ckpt',
                       global_step=self.total_steps)
 
   def get_q_value(self, observation):
