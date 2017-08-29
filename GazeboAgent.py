@@ -22,10 +22,10 @@ def main():
 
   env = gym.make(env_name)
   model = ConvModel(env, learning_rate=2.5e-4, momentum=0.95, gamma=0.99,
-      tau=0.01, soft_updates=False, weights_to_load=weights_to_load, grayscale=False)
+      tau=0.01, soft_updates=True, weights_to_load=weights_to_load, grayscale=False, window_size=8)
   agent = DQNAgent(env, model, linear_epsilon_decay=True,
-      epsilon_decay_steps=1.e6, epsilon=1.0, min_epsilon=0.06,
-      exp_buffer_size=1000000, batch_size=128, render=render,
+      epsilon_decay_steps=3.e6, epsilon=1.0, min_epsilon=0.06,
+      exp_buffer_size=1000000, batch_size=256, render=render, 
       update_freq=1, random_starts=30,max_steps=10000)
 
   if evaluate:

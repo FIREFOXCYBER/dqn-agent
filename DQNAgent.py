@@ -10,7 +10,7 @@ class DQNAgent(object):
   def __init__(self, env, model, max_episodes=200000, max_steps=1000000,
                exp_buffer_size=40000, epsilon=0.9, linear_epsilon_decay=True,
                epsilon_decay_steps=1.e6, exponential_epsilon_decay=0.99,
-               min_epsilon=0.01, batch_size=20, render=True, warmup_steps=5e4,
+               min_epsilon=0.01, batch_size=512, render=True, warmup_steps=3e4,
                update_freq=1, random_starts=1):
     """Deep Q-learning agent for OpenAI gym. Currently supports only
     one dimensional input.
@@ -170,11 +170,12 @@ class DQNAgent(object):
 
   def append_to_recent_observations(self, observation):
     observation = self.model.reshape_observation(observation)
-    #cv2.imshow("obz", observation)
-    #cv2.waitKey(1)
-    b, g, r = cv2.split(observation)
-    observation_rev = np.concatenate( (b,g,r), axis=0)
-    self.recent_observations.append(observation_rev)
+    if self.model.grayscale:
+      self.recent_observations.append(observation)
+    else:
+      b, g, r = cv2.split(observation)
+      observation_rev = np.concatenate( (b,g,r), axis=0)
+      self.recent_observations.append(observation_rev)
 
   def save_experience(self, action, reward, done):
     self.experiences.save_experience(self.recent_observations[-1],

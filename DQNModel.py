@@ -8,7 +8,7 @@ class DQNModel(object):
   def __init__(
       self, env, learning_rate=2.5e-4, momentum=0.95, gamma=0.99, tau=0.01,
       huber_loss=True, soft_updates=True, steps_to_hard_update=10000,
-      weights_to_load=None, train_dir='dqnrgb2', collect_summaries=True):
+      weights_to_load=None, train_dir='dqnrgb6', collect_summaries=True):
     """
     arguments:
     env -- OpenAI gym environment
@@ -99,16 +99,13 @@ class DQNModel(object):
 
     loss_summary = tf.summary.scalar('loss', self.loss)
     q_summary = tf.summary.scalar('max_q', tf.reduce_max(online_qs))
-    temp_img = tf.split(self.online_model['x'],4,axis=3)
+    
+    num_imgs = self.window_size
+    temp_img = tf.split(self.online_model['x'],num_imgs,axis=3)
     img = []
-    img.append( tf.concat(temp_img[0:2] ,2))
-    img.append( tf.concat(temp_img[2:4] ,2))
-    online_input_summary = tf.summary.image("online", tf.concat( img[:],1))
-    temp_img = tf.split(self.target_model['x'],4,axis=3)
-    img = []
-    img.append( tf.concat(temp_img[0:2] ,2))
-    img.append( tf.concat(temp_img[2:4] ,2))
-    target_input_summary = tf.summary.image("target", tf.concat( img[:],1))
+    img.append( tf.concat(temp_img[:] ,2))
+    online_input_summary = tf.summary.image("online", img[:])
+    
     self.summary_op = tf.summary.merge_all()
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.666)
@@ -192,7 +189,7 @@ class DQNModel(object):
 
     if self.total_steps % 3000 == 0:
       self.saver.save(self.sess,
-                      'dqn2/model.ckpt',
+                      'dqn4/model.ckpt',
                       global_step=self.total_steps)
 
   def get_q_value(self, observation):
